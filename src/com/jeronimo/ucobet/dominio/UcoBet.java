@@ -9,8 +9,7 @@ public class UcoBet {
     Scanner scanner = new Scanner(System.in);
     private final List<Usuario> usuarios;
     private final static int LONGITUD_NUMERO_GANADOR = 4;
-    String numeroGanador  = "1546";
-    private final static LocalTime HORA_CIERRE = LocalTime.of(15, 1);
+    private final static LocalTime HORA_CIERRE = LocalTime.of(17, 8);
 
     public UcoBet() {
         usuarios = new ArrayList<>();
@@ -26,6 +25,7 @@ public class UcoBet {
     public void ingreso(){
         boolean controlNombre;
         boolean controlIdentificacion;
+        String numeroGanador;
         Usuario usuario;
 
         if(!verificadorTiempo()) {
@@ -57,14 +57,14 @@ public class UcoBet {
                     generarApuesta(usuario);
                 } else {
                     System.out.println("Identificacion ya registrada");
-                    //TO DO : Error
                 }
             }
         }else{
             System.out.println("La hora de apostar ya a terminado");
             //Se realizan la verificacion de los resultados y la obtencion del numero ganador
-            //TO DO : ADMIN
-            manejoResultado();
+            numeroGanador = ingresoNumeroGanador();
+            System.out.println("El número ganador fue: " + numeroGanador);
+            manejoResultado(numeroGanador);
         }
     }
 
@@ -86,11 +86,11 @@ public class UcoBet {
     }
 
     //Se agregan las apuestas y se determina el resultado de esta
-    public void manejoResultado(){
+    public void manejoResultado(String numeroGanador){
         List<String> numeroLista;
 
         //Se recorre la lista de usuarios y sus respectivas apuestas
-        for(Usuario  usuario: usuarios ) {
+        for(Usuario usuario: usuarios ) {
             List<Apuesta> apuestas = usuario.getApuestas();
             for (Apuesta usuarioA : apuestas) {
                 String identificacion = usuario.getIdentificacion();
@@ -119,7 +119,7 @@ public class UcoBet {
     }
 
     //Manejo de los casos dependiendo del numero de cifras ingresados
-    private boolean manejarCaso(int numeroDeCifras, int porcetajeDeGanancia, List<String> numeroLista, List<String> numeroGanadorLista, double saldo, String identificacion) {
+    private void manejarCaso(int numeroDeCifras, int porcetajeDeGanancia, List<String> numeroLista, List<String> numeroGanadorLista, double saldo, String identificacion) {
         List<String> listaAComparar = numeroGanadorLista;
 
         if(numeroDeCifras != LONGITUD_NUMERO_GANADOR) {
@@ -127,17 +127,14 @@ public class UcoBet {
         }
 
         if (listaAComparar.equals(numeroLista)){
-            double finalSaldo = saldo*1.1*porcetajeDeGanancia;
+            double finalSaldo = saldo* 1.1 *porcetajeDeGanancia;
             usuarios.stream().filter(usuario -> usuario.getIdentificacion().equals(identificacion))
                     .forEach(usuario -> {
                         usuario.setAcierto();
                                 usuario.setSaldo(finalSaldo);
                                 usuario.getApuestas().forEach(apuesta -> apuesta.setResultado(true));
                     });
-            return true;
-        }else
-            System.out.println("Fallaste");
-        return false;
+        }
     }
 
     public void historial(){
@@ -147,8 +144,6 @@ public class UcoBet {
         String identificacion = scanner.nextLine();
         scanner.nextLine();
 
-        System.out.println("El número ganador fue: " + numeroGanador);
-
         usuarios.stream().filter(usuarioA -> usuarioA.getIdentificacion().equals(identificacion) &&
                         usuarioA.getNombre().equalsIgnoreCase(nombre))
                 .forEach(usuarioA ->{System.out.println("El usuario "+usuarioA.getNombre()+" aposto por :");
@@ -157,6 +152,7 @@ public class UcoBet {
                         });
                         System.out.println("Saldo: " + usuarioA.getSaldo());
         });
+
     }
 
     // Convierte el número seleccionado en una lista
@@ -166,6 +162,14 @@ public class UcoBet {
             listaNumeros.add(String.valueOf(digito));
         }
         return listaNumeros;
+    }
+
+    public String ingresoNumeroGanador(){
+        System.out.print("Ingresa el numero que va a ganar : ");
+        String numeroGanador = scanner.nextLine();
+        scanner.nextLine();
+
+        return numeroGanador;
     }
 
 }
