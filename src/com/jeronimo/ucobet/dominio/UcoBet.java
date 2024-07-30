@@ -7,10 +7,10 @@ import java.util.Scanner;
 
 public class UcoBet {
     Scanner scanner = new Scanner(System.in);
-    private List<Usuario> usuarios;
+    private final List<Usuario> usuarios;
     private final static int LONGITUD_NUMERO_GANADOR = 4;
-    private final static int ACIERTO = 0;
-    private final static LocalTime HORA_CIERRE = LocalTime.of(20, 40);
+    String numeroGanador  = "1546";
+    private final static LocalTime HORA_CIERRE = LocalTime.of(15, 1);
 
     public UcoBet() {
         usuarios = new ArrayList<>();
@@ -47,7 +47,7 @@ public class UcoBet {
                     filter(usuarioV -> usuarioV.getIdentificacion().equalsIgnoreCase(identificacion)).toList().isEmpty();
 
             if (controlIdentificacion) {
-                usuario = new Usuario(nombre, correo, identificacion, celular, ACIERTO);
+                usuario = new Usuario(nombre, correo, identificacion, celular);
                 usuarios.add(usuario);
                 generarApuesta(usuario);
             } else {
@@ -56,6 +56,7 @@ public class UcoBet {
                             filter(usuarioV -> usuarioV.getIdentificacion().equalsIgnoreCase(identificacion)).toList().getFirst();
                     generarApuesta(usuario);
                 } else {
+                    System.out.println("Identificacion ya registrada");
                     //TO DO : Error
                 }
             }
@@ -86,7 +87,6 @@ public class UcoBet {
 
     //Se agregan las apuestas y se determina el resultado de esta
     public void manejoResultado(){
-        String numeroGanador  = "1546";
         List<String> numeroLista;
 
         //Se recorre la lista de usuarios y sus respectivas apuestas
@@ -94,39 +94,24 @@ public class UcoBet {
             List<Apuesta> apuestas = usuario.getApuestas();
             for (Apuesta usuarioA : apuestas) {
                 String identificacion = usuario.getIdentificacion();
-                long saldo = usuarioA.getMonto();
+                double saldo = usuarioA.getMonto();
 
                 //Se crean listas que van a ser transformadas de String a listas
                 numeroLista = transformacionALista(usuarioA.getNumeroApostado());
                 List<String> numeroGanadorLista = transformacionALista(numeroGanador);
                 int largoDelNumero = numeroLista.size();
 
-                System.out.println("Apostaste por " + numeroLista.size() + " cifras por $" + usuarioA.getMonto()
-                        + " al número: " + usuarioA.getNumeroApostado());
-
-                // TO DO : No olvide quitar esto
-                System.out.println(numeroGanador);
-                System.out.println(numeroLista);
-
-                System.out.println("Para el número ganador fue: " + numeroGanador);
 
                 //Manejo de las diferentes situaciones dependiendo del numero de cifras del usuario
                 switch (largoDelNumero) {
                     case 1 ->
-                            manejarCaso(largoDelNumero, "Para una cifra tu número fue: " + numeroLista,
-                                    10, numeroLista, numeroGanadorLista, saldo, identificacion);
+                            manejarCaso(largoDelNumero, 10, numeroLista, numeroGanadorLista, saldo, identificacion);
                     case 2 ->
-                            manejarCaso(largoDelNumero, "Para dos cifras tu número fue: " + numeroLista,
-                                    15, numeroLista, numeroGanadorLista, saldo, identificacion);
+                            manejarCaso(largoDelNumero, 15, numeroLista, numeroGanadorLista, saldo, identificacion);
                     case 3 ->
-                            manejarCaso(largoDelNumero, "Para tres cifras tu número fue: " + numeroLista,
-                                    50, numeroLista, numeroGanadorLista, saldo, identificacion);
+                            manejarCaso(largoDelNumero, 50, numeroLista, numeroGanadorLista, saldo, identificacion);
                     case 4 -> {
-                        manejarCaso(largoDelNumero, "Para cuatro cifra tu número fue: " + numeroLista,
-                                1000, numeroLista, numeroGanadorLista, saldo, identificacion);
-                    }
-                    default -> {
-                        System.out.println("Número de cifras no válido");
+                        manejarCaso(largoDelNumero, 100, numeroLista, numeroGanadorLista, saldo, identificacion);
                     }
                 }
             }
@@ -134,23 +119,21 @@ public class UcoBet {
     }
 
     //Manejo de los casos dependiendo del numero de cifras ingresados
-    private boolean manejarCaso(int numeroDeCifras, String mensaje, int porcetajeDeGanancia, List<String> numeroLista, List<String> numeroGanadorLista, long saldo, String identificacion) {
-        List<String> listaAComparar = numeroLista;
+    private boolean manejarCaso(int numeroDeCifras, int porcetajeDeGanancia, List<String> numeroLista, List<String> numeroGanadorLista, double saldo, String identificacion) {
+        List<String> listaAComparar = numeroGanadorLista;
 
         if(numeroDeCifras != LONGITUD_NUMERO_GANADOR) {
             listaAComparar = numeroGanadorLista.subList(LONGITUD_NUMERO_GANADOR - numeroDeCifras, LONGITUD_NUMERO_GANADOR);
         }
 
-        // TO DO : Eliminar
-        System.out.println(listaAComparar);
-
         if (listaAComparar.equals(numeroLista)){
-            System.out.println(mensaje);
-            System.out.println("Haz acertado");
-            System.out.println("Saldo original: " + saldo);
-            System.out.println("Saldo actualizado: " + (saldo * porcetajeDeGanancia));
+            double finalSaldo = saldo*1.1*porcetajeDeGanancia;
             usuarios.stream().filter(usuario -> usuario.getIdentificacion().equals(identificacion))
-                    .forEach(Usuario::setAcierto);
+                    .forEach(usuario -> {
+                        usuario.setAcierto();
+                                usuario.setSaldo(finalSaldo);
+                                usuario.getApuestas().forEach(apuesta -> apuesta.setResultado(true));
+                    });
             return true;
         }else
             System.out.println("Fallaste");
@@ -158,8 +141,24 @@ public class UcoBet {
     }
 
     public void historial(){
-        usuarios.forEach(usuario -> System.out.println(usuario.getAcierto()));
+        System.out.print("Ingresa tu nombre: ");
+        String nombre = scanner.nextLine();
+        System.out.print("Ingresa tu identificacion: ");
+        String identificacion = scanner.nextLine();
+        scanner.nextLine();
+
+        System.out.println("El número ganador fue: " + numeroGanador);
+
+        usuarios.stream().filter(usuarioA -> usuarioA.getIdentificacion().equals(identificacion) &&
+                        usuarioA.getNombre().equalsIgnoreCase(nombre))
+                .forEach(usuarioA ->{System.out.println("El usuario "+usuarioA.getNombre()+" aposto por :");
+                        usuarioA.getApuestas().forEach(apuesta -> {
+                            System.out.println(apuesta.getNumeroApostado()+ " y su resultado fue : "+ (apuesta.isResultado() ? "Ganó" : "Perdió"));
+                        });
+                        System.out.println("Saldo: " + usuarioA.getSaldo());
+        });
     }
+
     // Convierte el número seleccionado en una lista
     public List<String> transformacionALista(String numero){
         List<String> listaNumeros = new ArrayList<>();
@@ -169,7 +168,4 @@ public class UcoBet {
         return listaNumeros;
     }
 
-    public List<Usuario> getUsuarios() {
-        return usuarios;
-    }
 }
