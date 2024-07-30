@@ -1,8 +1,8 @@
 package com.jeronimo.ucobet.dominio;
 
 public class Apuesta {
-    private final String numeroApostado;
-    private final double monto;
+    private String numeroApostado;
+    private double monto;
     private boolean resultado;
 
     public Apuesta(String numeroApostado, long monto) {
